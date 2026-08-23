@@ -23,7 +23,7 @@ export const AI_PARAMS = {
   REFINEMENT_BATCH: 50,      // 补充轮批大小
   CANDIDATE_POOL: 6,         // 候选名池上限（existingFolders.slice 前几个）
   TITLE_TRUNCATE: 36,        // 阶段1 标题截断字数
-  INTRO_TRUNCATE: 30,        // toAiVideos intro 截断字数
+  INTRO_TRUNCATE: 120,       // toAiVideos intro 截断字数（加长：弱模型仅凭30字易误判，如"零元购→远程控制主机"被截掉）
   UNC_THRESHOLD_PCT: 5,      // 未分类补类触发百分比阈值
   UNC_THRESHOLD_ABS: 20,     // 未分类补类触发绝对数阈值
   SRC_CONCENTRATION_PCT: 40, // 源夹集中度预警百分比阈值
