@@ -378,13 +378,16 @@ export async function classifyAll(
     }
 
     // ---- 阶段2：分批归类 ----
+    // 增量候选目标：完整夹列表排除视频原本所在的【源夹】（避免模型把视频归回源夹=静默漏分）
+    const srcFolderSet = new Set(medias.map((m) => m.srcFolderName).filter(Boolean) as string[]);
+    const incCandidates = existingFolders.filter((f) => !srcFolderSet.has(f));
     for (let bi = 0; bi < batches.length; bi++) {
       const batch = batches[bi];
       onProgress?.(bi, batches.length, 'ai');
       try {
         emit(`AI 处理第 ${bi + 1}/${batches.length} 批（${batch.length} 条）...`);
-        // 候选名池：只取前 N 个（弱模型对长列表会迷惑、截断输出）
-        const aiRefs = existingFolders.slice(0, AI_PARAMS.CANDIDATE_POOL);
+        // 候选目标池：全量只取前 N 个（弱模型对长列表会迷惑、截断输出）；增量用「完整夹列表排除源夹」
+        const aiRefs = mode === 'incremental' ? incCandidates : existingFolders.slice(0, AI_PARAMS.CANDIDATE_POOL);
         const aiRes = await aiClassify(cfg, aiRefs, toAiVideos(batch), userRequirement, mode, establishedCats, fixedCategories, fixedDescs);
         // 思维链摘要：让用户看到 AI 每批的归类思路（进度可视化的核心）
         const thought = (aiRes.thoughts || '').trim();
@@ -437,7 +440,9 @@ export async function classifyAll(
       for (let sbi = 0; sbi < subBatches.length; sbi++) {
         const sub = subBatches[sbi];
         try {
-          const aiRes2 = await aiClassify(cfg, existingFolders.slice(0, AI_PARAMS.CANDIDATE_POOL), toAiVideos(sub), userRequirement, mode, establishedCats, fixedCategories, fixedDescs);
+          // 二次补充：增量用「排除源夹的完整候选池」，全量用前 N 个
+          const refCands = mode === 'incremental' ? incCandidates : existingFolders.slice(0, AI_PARAMS.CANDIDATE_POOL);
+          const aiRes2 = await aiClassify(cfg, refCands, toAiVideos(sub), userRequirement, mode, establishedCats, fixedCategories, fixedDescs);
           const thought2 = (aiRes2.thoughts || '').trim();
           if (thought2) emit(`💭 「${thought2.slice(0, 120)}${thought2.length > 120 ? '…' : ''}」`);
           for (const [cat, vids] of Object.entries(aiRes2.categories || {})) {
