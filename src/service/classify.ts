@@ -10,6 +10,7 @@
 // ============================================================
 import type { CategoryMap, ClassifyRule, FavMedia, RuleScope } from '../types';
 import { aiClassify, aiDesignCategories, type DesignedCategory } from './ai';
+import { getVideoZoneTags } from './bili';
 import type { AiConfig } from '../types';
 import { matchExistingFolders, normalizeName } from '../utils/zh';
 
@@ -263,6 +264,8 @@ function toAiVideos(medias: FavMedia[]) {
     intro: m.intro ? m.intro.substring(0, AI_PARAMS.INTRO_TRUNCATE) : '',
     upper: m.upper?.name || '',
     srcFolder: m.srcFolderName || '',  // 新增：源夹分布弱信号
+    zone: m.zone || '',
+    tags: m.tags || [],
   }));
 }
 
@@ -303,6 +306,25 @@ export async function classifyAll(
   // AI 可用 → AI 处理（rulesFirst 时规则命中的先剥离，不送 AI）
   if (cfg.enabled && cfg.apiKey) {
     usedAi = true;
+
+    // 增量模式：抓取 B站官方分区/标签作为弱模型分类强信号（仅增量：视频少、调用可控；全量不动以免海量请求触发风控）
+    if (mode === 'incremental') {
+      emit('🔍 增量模式：抓取 B站官方分区/标签作为分类强信号（弱模型语义补偿）...');
+      let done = 0;
+      for (const m of medias) {
+        if (m.bvid) {
+          try {
+            const meta = await getVideoZoneTags(m.bvid);
+            if (meta.zone) m.zone = meta.zone;
+            if (meta.tags.length) m.tags = meta.tags;
+          } catch { /* 单条失败不影响整体 */ }
+        }
+        done++;
+        onProgress?.(done, medias.length, 'fetch');
+      }
+      emit(`✅ 分区/标签抓取完成（${medias.filter((m) => m.zone).length}/${medias.length} 条获得分区信号）`);
+    }
+
     const result: CategoryMap = {};
 
     // ---- 规则优先：命中的直接归类（省 AI 调用，且是用户显式意图） ----
