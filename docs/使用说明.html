@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B站收藏整理台 · 使用说明</title>
+<style>
+  :root {
+    --pink: #fb7299; --pink-dark: #f25b87; --bg: #f7f8fa; --card: #fff;
+    --border: #eef0f3; --text: #1f2329; --text2: #6b7280; --green: #30a46c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+  /* 头部 */
+  .hero {
+    background: linear-gradient(135deg, #ff9db6, var(--pink));
+    border-radius: 20px; padding: 40px 32px; color: #fff; margin-bottom: 28px;
+    position: relative; overflow: hidden;
+  }
+  .hero h1 { font-size: 30px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .hero p { opacity: 0.95; font-size: 15px; }
+  .hero .badge {
+    display: inline-block; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);
+    padding: 2px 12px; border-radius: 20px; font-size: 12px; margin-top: 12px;
+  }
+  .hero svg { width: 34px; height: 34px; }
+  /* 卡片 */
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin-bottom: 18px;
+  }
+  .card h2 { font-size: 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card h2 svg { color: var(--pink); width: 20px; height: 20px; }
+  .card h3 { font-size: 15px; margin: 14px 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .feat {
+    border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fcfcfd;
+  }
+  .feat .icon { width: 36px; height: 36px; border-radius: 10px; background: #fff0f5; color: var(--pink);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .feat .icon svg { width: 20px; height: 20px; }
+  .feat b { font-size: 14px; }
+  .feat p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  /* 步骤 */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--pink); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .step-body b { font-size: 14px; }
+  .step-body p { font-size: 13px; color: var(--text2); }
+  /* 提示块 */
+  .tip {
+    border-radius: 12px; padding: 14px 16px; font-size: 13px; margin-top: 12px;
+  }
+  .tip.warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+  .tip.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .tip.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .kbd {
+    background: #1f2329; color: #e5e7eb; border-radius: 6px; padding: 1px 8px; font-size: 12px;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+  code { background: #f3f4f6; border-radius: 5px; padding: 1px 6px; font-size: 13px; }
+  ul, ol { padding-left: 20px; font-size: 14px; }
+  li { margin: 4px 0; }
+  .foot { text-align: center; color: var(--text2); font-size: 12px; margin-top: 30px; }
+  @media (max-width: 640px) {
+    .hero { padding: 28px 20px; }
+    .hero h1 { font-size: 24px; }
+    .wrap { padding: 20px 14px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      B站收藏整理台
+    </h1>
+    <p>B站收藏夹自动分类 + AI 辅助整理的工作台插件</p>
+    <span class="badge">油猴脚本 · 数据本地 · 风控保护</span>
+  </div>
+
+  <div class="card">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      这是什么？
+    </h2>
+    <p style="font-size:14px;">收藏了一堆视频却「收藏即吃灰」？本插件在 B 站页面右下角注入一个整理面板，一键抓取收藏夹全部视频，用「规则 + AI」自动分类，预览确认后把视频移入对应的分类收藏夹。</p>
+    <ul style="margin-top:10px;">
+      <li><b>规则优先</b>：关键词/正则规则先行命中，结果确定、可离线、可编辑</li>
+      <li><b>AI 辅助</b>：OpenAI 兼容接口（DeepSeek / 通义 / Kimi 等），只处理规则漏掉的视频</li>
+      <li><b>启发式兜底</b>：即使 AI 不可用，也按标题高频词归类，绝不整批丢进「未分类」</li>
+      <li><b>风控保护</b>：内置请求节流、指数退避、412 风控检测与分级冷却</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      四大模块
+    </h2>
+    <div class="grid">
+      <div class="feat">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+        <b>收藏夹总览</b>
+        <p>查看全部收藏夹与视频数，一键进入整理</p>
+      </div>
+      <div class="feat">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5l-2 2m-7 7l-2 2m11 0l-2-2m-7-7l-2-2"/></svg></div>
+        <b>智能整理</b>
+        <p>抓取 → 规则+AI 分类 → 预览确认 → 移动</p>
+      </div>
+      <div class="feat">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <b>整理记录</b>
+        <p>每次整理的完整历史，可导出留存</p>
+      </div>
+      <div class="feat">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10l2.1 2.1M19.1 4.9l-2.1 2.1m-10 10l-2.1 2.1"/></svg></div>
+        <b>设置与备份</b>
+        <p>AI 配置、分类规则、偏好、导出/导入备份</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+      安装方法（3 步）
+    </h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <b>安装脚本管理器</b>
+          <p>浏览器安装 Tampermonkey（篡改猴）或 Violentmonkey（暴力猴）扩展，并保持启用。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <b>安装本脚本</b>
+          <p>将 <code>bilibili-fav-organizer.user.js</code> 文件拖入浏览器窗口，或复制文件内容新建脚本粘贴保存。Tampermonkey 会弹出安装确认，点「安装」即可。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <b>打开 B 站使用</b>
+          <p>打开 <code>bilibili.com</code> 任意页面，右下角出现粉色「✦」按钮，点击展开工作台面板。</p>
+        </div>
+      </div>
+    </div>
+    <div class="tip ok">✅ 首次使用：先到「设置」填入 AI 配置（API 地址 + Key + 模型），保存并「测试连接」；不配置也能用（规则 + 启发式兜底）。</div>
+  </div>
+
+  <div class="card">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      使用流程
+    </h2>
+    <ol>
+      <li><b>收藏夹总览</b> → 点击某个收藏夹的「整理」按钮</li>
+      <li><b>智能整理</b> → 点「抓取全部视频」，等待进度完成</li>
+      <li>查看<b>分类预览</b>（可点击分类标题折叠/展开明细）</li>
+      <li>确认无误 → 点「<b>确认并移动全部视频</b>」</li>
+      <li>插件自动复用已有收藏夹，必要时新建分类收藏夹，逐分类限速移动</li>
+      <li>完成后刷新页面即可看到整理结果</li>
+    </ol>
+    <div class="tip warn">⚠️ 移动是写操作：会真实改变你的收藏夹结构。请先在小收藏夹上试用，确认分类效果后再整理大收藏夹。若触发风控，插件会自动停止并提示冷却时间（IP 级约 10 分钟 / 账号级约 1 小时）。</div>
+  </div>
+
+  <div class="card">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      数据与隐私
+    </h2>
+    <ul>
+      <li>全部数据保存在<b>你的浏览器本地</b>（GM 存储），不经过任何服务器</li>
+      <li>AI 请求仅向<b>你自己配置的 API 地址</b>发送视频标题等元信息，Key 仅存本机</li>
+      <li>面板「设置」页提供<b>导出 JSON 备份 / 导入恢复</b>，建议定期导出</li>
+      <li>整理记录最多保留最近 200 条，防止存储无限膨胀</li>
+    </ul>
+    <div class="tip info">💡 提示：把本页加入书签，随时回来查看使用说明。</div>
+  </div>
+
+  <div class="foot">B站收藏整理台 v0.1.0 · 由 WorkBuddy 资料库托管 · 本页不收集任何数据</div>
+</div>
+</body>
+</html>
