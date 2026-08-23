@@ -30,8 +30,6 @@ export interface FavMedia {
   srcFolderId?: number;
   /** 来源收藏夹名（展示用） */
   srcFolderName?: string;
-  /** B站官方分区（弱模型分类强信号，增量模式抓取），如 "科技/计算机技术" */
-  zone?: string;
   /** B站官方标签（弱模型分类强信号，增量模式抓取） */
   tags?: string[];
 }

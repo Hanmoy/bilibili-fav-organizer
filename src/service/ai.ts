@@ -207,7 +207,7 @@ ${trimmedTitles.join('\n')}`;
 export async function aiClassify(
   cfg: AiConfig,
   existingFolders: string[],
-  videos: Array<{ id: number; bvid?: string; type: number; title: string; intro?: string; upper?: string; srcFolder?: string; zone?: string; tags?: string[] }>,
+  videos: Array<{ id: number; bvid?: string; type: number; title: string; intro?: string; upper?: string; srcFolder?: string; tags?: string[] }>,
   userRequirement = '',
   mode: 'full' | 'incremental' = 'full',
   establishedCats: string[] = [],
@@ -219,7 +219,7 @@ export async function aiClassify(
     : '';
 
   // 视频字段说明（upper=UP主名，是归类的强参考信号）
-  const videoFieldHint = `待处理视频（JSON 字段：id/bvid/type 为标识，title 标题，intro 简介，upper 为UP主名（同类UP主内容往往同主题，可作参考），srcFolder 为原所在收藏夹名（仅参考，以内容为准），zone 为 B站官方分区（强信号），tags 为 B站官方标签（强信号，优先级高于标题关键词）：`;
+  const videoFieldHint = `待处理视频（JSON 字段：id/bvid/type 为标识，title 标题，intro 简介，upper 为UP主名（同类UP主内容往往同主题，可作参考），srcFolder 为原所在收藏夹名（仅参考，以内容为准），tags 为 B站官方标签（强信号，优先级高于标题关键词）：`;
 
   // 分类定义文本：有定义的分类以「名：定义」呈现，帮助阶段2 按语义而非仅按字面归类
   const fixedListText = fixedCategories
@@ -238,14 +238,14 @@ export async function aiClassify(
 [ ${existingFolders.length ? existingFolders.join(', ') : '暂无'} ]
 
 【推理步骤（每一条视频都走一遍）】
-1. 先读 zone 与 tags（强信号），再结合标题+简介，判断它的【真实内容主题】（标题可能误导，务必以 zone/tags 为准）。
+1. 先读 tags（B站官方标签，强信号），再结合标题+简介，判断它的【真实内容主题】（标题可能误导，务必以 tags 为准）。
 2. 对照候选夹，判断该主题与哪个夹【明显相关】。
 3. 归入该夹，并写一句简短理由。
 
 【核心原则】
 - 按【内容主题】归类，绝不只看标题关键词。反例：标题含"AI"但讲就业→归"求职就业"而非"AI"；标题含"历史"但是游戏→归"游戏"；"零元购/远程控制主机"讲技术→归"技术"类而非"手工DIY"。
 - 仅当视频主题与某候选夹【明显相关】才归入；不确定或无法归入任何候选夹时，放入"未分类"（宁可放未分类，也不要强行塞入不相关的夹，更不要塞回视频原本所在的源夹）。
-- 【B站官方分区 zone 与 tags 是强信号，优先级高于标题关键词】：zone 如"科技/计算机技术""生活/出行"，tags 是 UP主/系统打的细分标签。判主题时先读 zone+tags：zone=科技/计算机技术 且 tags 含"远程控制/主机"→技术类；zone=科技/人工智能 或 tags 含"DeepSeek/大模型"→AI类；zone=生活/出行 且 tags 含"房车/旅行"→生活科普类；zone=知识/财经 且 tags 含"经济"→经济/社会纪实类。当 zone/tags 与标题字面冲突时，以 zone/tags 为准。
+- 【B站官方标签 tags 是强信号，优先级高于标题关键词】：tags 是 UP主/系统打的细分标签。判主题时先读 tags，再从【候选目标收藏夹】里选主题最贴切的：tags 含"远程控制/电脑/终端/DIY"→选技术/编程向的候选夹；tags 含"DeepSeek/AI/大模型"→选AI向的候选夹；tags 含"房车/旅游/出行"→选生活/旅行向的候选夹；tags 含"经济/社会"→选社会/财经向的候选夹。当 tags 与标题字面冲突时，以 tags 为准。
 - 不新建任何分类。
 
 【用户补充背景知识（最高优先级，必须严格遵守）】

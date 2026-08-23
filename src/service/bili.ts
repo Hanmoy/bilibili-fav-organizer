@@ -219,26 +219,15 @@ export async function cleanFolderInvalids(mediaId: number): Promise<void> {
   });
 }
 
-/** 抓取视频的 B站官方分区(zone)与标签(tags)，作为弱模型分类的强信号
- *  - 分区来自 /x/web-interface/view 的 tname(主分区)+typename(子分区)
- *  - 标签来自 /x/tag/archive/tags
- *  - 任一接口失败不影响整体（降级为空），调用方应容忍空值 */
-export async function getVideoZoneTags(bvid: string): Promise<{ zone: string; tags: string[] }> {
-  let zone = '';
-  let tags: string[] = [];
-  try {
-    const view = await request<{ tname?: string; typename?: string }>({
-      url: `${API_HOST}/x/web-interface/view`,
-      params: { bvid },
-    });
-    zone = [view.tname, view.typename].filter(Boolean).join('/');
-  } catch { /* 单条失败降级为空，不阻断整体 */ }
+/** 抓取视频的 B站官方标签，作为弱模型分类的强信号
+ *  来自 /x/tag/archive/tags（B站已移除 view.tname 分区名，分区不可用，仅标签可靠）
+ *  失败返回空数组，调用方容忍空值 */
+export async function getVideoTags(bvid: string): Promise<string[]> {
   try {
     const tagData = await request<Array<{ tag_name?: string }>>({
       url: `${API_HOST}/x/tag/archive/tags`,
       params: { bvid },
     });
-    tags = (tagData || []).map((t) => t.tag_name || '').filter(Boolean).slice(0, 8);
-  } catch { /* 单条失败降级为空，不阻断整体 */ }
-  return { zone, tags };
+    return (tagData || []).map((t) => t.tag_name || '').filter(Boolean).slice(0, 8);
+  } catch { return []; }
 }
