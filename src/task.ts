@@ -296,9 +296,10 @@ export function discardTask(): void {
 /** 清理跨夹重复：把多余副本从各自源收藏夹移除（保留最早收藏的一份），返回移除数 */
 export async function applyDedup(): Promise<number> {
   const task = state.task;
-  if (!task || !task.dupExtras.length || task.applying) return 0;
+  if (!task || !task.dupExtras.length) return 0;
 
   task.applying = true;
+  task.applyProgress = { done: 0, total: task.dupExtras.length };
   persistTask();
   let removed = 0;
   try {
@@ -309,6 +310,7 @@ export async function applyDedup(): Promise<number> {
       taskLog(`🧹 从【${group[0]?.srcFolderName || srcId}】移除 ${group.length} 个重复副本`);
       await deleteResources(srcId, resources);
       removed += group.length;
+      task.applyProgress.done += group.length;
       task.dupExtras = task.dupExtras.filter((m) => m.srcFolderId !== srcId);
       persistTask();
     }

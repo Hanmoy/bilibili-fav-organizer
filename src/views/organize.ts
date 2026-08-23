@@ -524,8 +524,13 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
     body.querySelector('#wb-dedup-now')?.addEventListener('click', async () => {
       const extras = state.task?.dupExtras || [];
       if (!extras.length || state.task?.applying || state.task?.done) return;
+      if (!state.task) return;
       if (!confirm(`确认从源收藏夹移除 ${extras.length} 个重复副本？（每组保留最早收藏的一份，此操作不可撤销）`)) return;
-      render(); // 立即进入 applying 态（按钮禁用），后续由轮询恢复
+      // 先于 render 置位：去重也是写操作，需即时反馈，避免点击后看似卡死
+      state.task.applying = true;
+      persistTask();
+      render(); // 立即进入 applying 态（按钮禁用）
+      startPolling(); // 后台去重期间实时刷新进度条
       const removed = await applyDedup();
       render(); // dupExtras 已更新/按钮恢复
       renderLogs(body); // render 重建了日志容器，重新填充
@@ -535,13 +540,18 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
     // ---- 确认移动（含断点续跑：applySuggest 按条目幂等跳过已移动的） ----
     body.querySelector('#wb-apply-all')?.addEventListener('click', async () => {
       if (state.task?.applying || state.task?.done) return;
+      if (!state.task) return;
       // 回写编辑结果到 state
       if (state.task) {
         state.task.suggest = Object.fromEntries(
           cats.map((c) => [c.key, c.items]),
         ) as CategoryMap;
       }
-      render(); // 立即进入 applying 态
+      // 先于 render 置位：进度条 + 禁用按钮立即出现，避免点击后看似卡死
+      state.task.applying = true;
+      persistTask();
+      render();
+      startPolling(); // 后台移动期间实时刷新进度条（applySuggest 每组移动后更新 applyProgress）
       await applySuggest();
       render(); // done / 恢复可续跑态
       renderLogs(body);
@@ -561,7 +571,9 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
     });
 
     // ---- applying 期间轮询：进度条/文本轻量更新，结束时才整页重绘 ----
-    if (state.task?.applying && refreshTimer === null) {
+    // 抽出为函数，供 click 处理器（点击后立即）与刷新重入两种入口复用
+    function startPolling(): void {
+      if (refreshTimer !== null) return;
       refreshTimer = window.setInterval(() => {
         const t = state.task;
         if (!t) {
@@ -581,6 +593,8 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
         render();
       }, 500);
     }
+    // 刷新/重入本页时若仍在后台移动，立即接管进度轮询
+    if (state.task?.applying && refreshTimer === null) startPolling();
   }
 
   render();
