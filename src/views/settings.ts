@@ -2,7 +2,7 @@
 // 视图：设置（AI 配置 / 分类规则 / 整理偏好 / 数据备份）
 // ============================================================
 import { state, persist } from '../state';
-import { exportBackup, parseBackup, importBackup, clearAllData, DEFAULT_CONFIG } from '../storage/store';
+import { exportBackup, parseBackup, importBackup, clearAllData, DEFAULT_CONFIG, loadMoveRecords } from '../storage/store';
 import { aiTestConnection } from '../service/ai';
 import { validateRules, testRules } from '../service/classify';
 import { Icons, esc, downloadText, readFileText, uid } from '../utils/svg';
@@ -45,10 +45,11 @@ export async function renderSettings(body: HTMLElement): Promise<void> {
     <div class="wb-card">
       <div class="wb-card-title">${Icons.folder} 分类规则（规则优先，确定性兜底）</div>
       <div id="wb-rule-list"></div>
-      <div class="wb-btn-row">
-        <button class="wb-btn ghost" id="wb-add-rule">${Icons.spark} 添加规则</button>
-        <button class="wb-btn ghost" id="wb-reset-rules">恢复默认规则</button>
-      </div>
+<div class="wb-btn-row">
+          <button class="wb-btn ghost" id="wb-add-rule">${Icons.spark} 添加规则</button>
+          <button class="wb-btn ghost" id="wb-reset-rules">恢复默认规则</button>
+          <button class="wb-btn ghost" id="wb-gen-rule-from-moves">🔧 从移动记录生成规则</button>
+        </div>
       <div class="wb-hint" style="margin-top:6px;">规则先行命中，AI 只处理规则未命中的视频；即使 AI 不可用也不会把整批丢进「未分类」。</div>
       <div class="wb-rule-test" id="wb-rule-test-panel">
         <button class="wb-btn ghost" id="wb-rule-test-toggle">${Icons.search} 测试规则</button>
@@ -293,6 +294,33 @@ export async function renderSettings(body: HTMLElement): Promise<void> {
     state.config.rules = structuredClone(DEFAULT_CONFIG.rules);
     persist();
     renderRules();
+  });
+
+  // 从移动记录生成规则
+  body.querySelector('#wb-gen-rule-from-moves')!.addEventListener('click', () => {
+    const moves = loadMoveRecords();
+    if (!moves.length) { toast('暂无移动记录'); return; }
+    const newRules: ClassifyRule[] = [];
+    moves.forEach(rec => {
+      const pattern = rec.srcTitle.replace(/[\-\/\^$*+?.()|[\]{}]/g, '\\$&');
+      const rule: ClassifyRule = {
+        id: uid(),
+        pattern,
+        category: rec.targetCategory,
+        isRegex: false,
+        enabled: true,
+        caseSensitive: false,
+        scope: 'title',
+      };
+      if (!state.config.rules.some(r => r.pattern === rule.pattern && r.category === rule.category)) {
+        newRules.push(rule);
+      }
+    });
+    if (newRules.length === 0) { toast('所有移动记录已对应已有规则'); return; }
+    state.config.rules = [...newRules, ...state.config.rules];
+    persist();
+    renderRules();
+    toast(`已生成 ${newRules.length} 条规则并加入规则列表`);
   });
 
   // --- 规则测试面板 ---

@@ -12,6 +12,7 @@ import type { DesignedCategory } from '../service/ai';
 import { Icons, esc, fmtNum, fmtTime, fmtDuration, downloadText } from '../utils/svg';
 import { toast } from './settings';
 import type { CategoryMap, FavMedia } from '../types';
+import { addMoveRecord } from '../storage/store';
 
 let refreshTimer: number | null = null;
 /** 阶段1 体系确认态的编辑缓冲（renderOrganize 重入不丢失编辑） */
@@ -470,19 +471,43 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
         const [m] = srcCat.items.splice(mi, 1);
         if (!m) { render(); return; }
         if (target === '__new__') {
-          const name = prompt('新分类名：', '');
-          if (name && name.trim()) {
-            const existing = cats.find((c) => c.key === name.trim());
-            if (existing) existing.items.push(m);
-            else cats.push({ id: nextId++, key: name.trim(), items: [m] });
+            const name = prompt('新分类名：', '');
+            if (name && name.trim()) {
+              const newName = name.trim();
+              const existing = cats.find((c) => c.key === newName);
+              if (existing) existing.items.push(m);
+              else cats.push({ id: nextId++, key: newName, items: [m] });
+              // 记录手动移动
+              addMoveRecord({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+                time: Date.now(),
+                srcCategory: srcCat.key,
+                srcMediaId: m.id,
+                srcTitle: m.title,
+                srcFolderName: m.srcFolderName,
+                targetCategory: newName,
+              });
+            } else {
+              // 取消，放回原位
+              srcCat.items.splice(mi, 0, m);
+              render();
+              return;
+            }
           } else {
-            srcCat.items.splice(mi, 0, m); // 取消，放回原位
+            const targetCat = cats.find((c) => c.key === target);
+            if (targetCat) targetCat.items.push(m);
+            else srcCat.items.splice(mi, 0, m); // 目标不存在，放回
+            // 记录手动移动
+            addMoveRecord({
+              id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+              time: Date.now(),
+              srcCategory: srcCat.key,
+              srcMediaId: m.id,
+              srcTitle: m.title,
+              srcFolderName: m.srcFolderName,
+              targetCategory: target,
+            });
           }
-        } else {
-          const targetCat = cats.find((c) => c.key === target);
-          if (targetCat) targetCat.items.push(m);
-          else srcCat.items.splice(mi, 0, m); // 目标不存在，放回
-        }
         render();
       });
     });

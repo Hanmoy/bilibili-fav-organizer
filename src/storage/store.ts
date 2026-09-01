@@ -92,6 +92,37 @@ export function addRecord(rec: OrganizeRecord): OrganizeRecord[] {
   return all;
 }
 
+// ---------- 手动移动记录持久化（用于规则生成） ----------
+const K_MOVE_RECORDS = `${PREFIX}move_records`;
+
+export interface MoveRecord {
+  id: string; // unique id
+  time: number; // timestamp ms
+  srcCategory: string;
+  srcMediaId: number;
+  srcTitle: string;
+  srcFolderName?: string;
+  targetCategory: string;
+}
+
+export function loadMoveRecords(): MoveRecord[] {
+  return GM_getValue<MoveRecord[] | undefined>(K_MOVE_RECORDS, []) || [];
+}
+
+function saveMoveRecords(records: MoveRecord[]): void {
+  // limit to 500 entries
+  GM_setValue(K_MOVE_RECORDS, records.slice(0, 500));
+}
+
+export function addMoveRecord(rec: MoveRecord): MoveRecord[] {
+  const all = loadMoveRecords();
+  all.unshift(rec);
+  saveMoveRecords(all);
+  return all;
+}
+
+  // stray code removed
+
 export function clearAllData(): void {
   GM_deleteValue(K_CONFIG);
   GM_deleteValue(K_RECORDS);
