@@ -90,6 +90,14 @@ export async function renderSettings(body: HTMLElement): Promise<void> {
         <div class="wb-hint">开启后 AI 设计完分类体系会暂停，供你改名/删除/新增分类后再开始归类，避免体系不对要全量重跑。默认关闭（一键整理）。</div>
       </div>
       <div class="wb-field">
+        <label class="wb-toggle" style="justify-content:space-between;">
+          <span class="wb-label" style="margin:0;">超大分类自动拆分</span>
+          <input type="checkbox" id="wb-pref-auto-split" ${config.pref.autoSplitLargeCategories ? 'checked' : ''} />
+          <span class="track"></span>
+        </label>
+        <div class="wb-hint">当分类条目 >70 条时，自动二次 AI 拆分为子分类，子分类名带原分类前缀（如 "历史政治·近代史"）。默认关闭。</div>
+      </div>
+      <div class="wb-field">
         <label class="wb-label">AI 每批处理条数</label>
         <input class="wb-input" id="wb-pref-batch" type="number" min="10" max="200" value="${config.pref.aiBatchSize}" />
         <div class="wb-hint">每批越小 AI 分类越完整（弱模型大列表会漏输出）；建议 ≤50。总视频会自动分批并多轮补充分类。</div>
@@ -364,6 +372,7 @@ export async function renderSettings(body: HTMLElement): Promise<void> {
     config.pref.allowAiCreate = (body.querySelector('#wb-pref-ai-create') as HTMLInputElement).checked;
     config.pref.rulesFirst = (body.querySelector('#wb-pref-rules-first') as HTMLInputElement).checked;
     config.pref.confirmTaxonomy = (body.querySelector('#wb-pref-confirm-tax') as HTMLInputElement).checked;
+    config.pref.autoSplitLargeCategories = (body.querySelector('#wb-pref-auto-split') as HTMLInputElement).checked;
     const batch = Number((body.querySelector('#wb-pref-batch') as HTMLInputElement).value);
     config.pref.aiBatchSize = Math.min(200, Math.max(10, batch || 50));
     persist();

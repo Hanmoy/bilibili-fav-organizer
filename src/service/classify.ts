@@ -12,6 +12,7 @@ import type { CategoryMap, ClassifyRule, FavMedia, RuleScope } from '../types';
 import { aiClassify, aiDesignCategories, type DesignedCategory } from './ai';
 import { getVideoTags } from './bili';
 import type { AiConfig } from '../types';
+import { state } from '../state';
 import { matchExistingFolders, normalizeName } from '../utils/zh';
 
 export const UNC = '未分类';
@@ -658,6 +659,35 @@ export async function classifyAll(
     }
 
     logs.push(...mergeLogs);
+    // 超大分类自动拆分（可选）
+    if (state.config.pref.autoSplitLargeCategories) {
+      const THRESHOLD = 70;
+      for (const cat of Object.keys(finalResult)) {
+        if (cat === UNC) continue;
+        const items = finalResult[cat];
+        if (!items || items.length <= THRESHOLD) continue;
+        emit(`🔀 超大分类「${cat}」条目 ${items.length}，启动自动二次拆分`);
+        // 使用 AI 设计子分类
+        const titles = items.map((m) => m.title);
+        const subDesigned = await aiDesignCategories(cfg, titles, existingFolders, `${userRequirement}（拆分 ${cat}）`);
+        const subCatNames = subDesigned.map((c) => `${cat}·${c.name}`);
+        const subDescs = Object.fromEntries(subDesigned.filter((c) => c.desc).map((c) => [`${cat}·${c.name}`, c.desc]));
+        // 对子集进行分类，使用新子分类列表
+        const subRes = await aiClassify(cfg, [], toAiVideos(items), userRequirement, mode, [], subCatNames, subDescs);
+        // 移除原大分类
+        delete finalResult[cat];
+        for (const [subCat, vids] of Object.entries(subRes.categories || {})) {
+          if (!vids?.length) continue;
+          const key = subCat.trim();
+          if (!key) continue;
+          (finalResult[key] ||= []).push(...vids.map((v) => {
+            const src = items.find((m) => (v.bvid && m.bvid === v.bvid) || m.id === v.id);
+            return src ? { ...src, category: key } : null;
+          }).filter(Boolean) as any);
+        }
+        mergeLogs.push(`🔀 超大分类「${cat}」拆分为 ${subCatNames.length} 子分类`);
+      }
+    }
     return { result: finalResult, logs, usedAi, mergeLogs };
   }
 

@@ -53,6 +53,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     lastRequirement: '',
     rulesFirst: false,
     confirmTaxonomy: false,
+    autoSplitLargeCategories: false,
   },
   folderLastRun: {},
 };

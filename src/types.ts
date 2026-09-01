@@ -82,6 +82,8 @@ export interface OrganizePref {
   rulesFirst: boolean;
   /** 阶段1 后是否暂停供用户确认分类体系（默认关；开启后阶段1 完成弹出行内可编辑分类列表） */
   confirmTaxonomy: boolean;
+  /** 超大分类自动拆分（>70 条）开关，默认关闭 */
+  autoSplitLargeCategories: boolean;
 }
 
 /** 全部本地配置（GM 存储） */
