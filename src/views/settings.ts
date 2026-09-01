@@ -297,31 +297,63 @@ export async function renderSettings(body: HTMLElement): Promise<void> {
   });
 
   // 从移动记录生成规则
-  body.querySelector('#wb-gen-rule-from-moves')!.addEventListener('click', () => {
-    const moves = loadMoveRecords();
-    if (!moves.length) { toast('暂无移动记录'); return; }
-    const newRules: ClassifyRule[] = [];
-    moves.forEach(rec => {
-      const pattern = rec.srcTitle.replace(/[\-\/\^$*+?.()|[\]{}]/g, '\\$&');
-      const rule: ClassifyRule = {
-        id: uid(),
-        pattern,
-        category: rec.targetCategory,
-        isRegex: false,
-        enabled: true,
-        caseSensitive: false,
-        scope: 'title',
-      };
-      if (!state.config.rules.some(r => r.pattern === rule.pattern && r.category === rule.category)) {
-        newRules.push(rule);
-      }
+body.querySelector('#wb-gen-rule-from-moves')!.addEventListener('click', () => {
+      const moves = loadMoveRecords();
+      if (!moves.length) { toast('暂无移动记录'); return; }
+      const candidates: ClassifyRule[] = [];
+      moves.forEach(rec => {
+        const pattern = rec.srcTitle.replace(/[\-\/\^$*+?.()|[\]{}]/g, '\\$&');
+        const rule: ClassifyRule = {
+          id: uid(),
+          pattern,
+          category: rec.targetCategory,
+          isRegex: false,
+          enabled: true,
+          caseSensitive: false,
+          scope: 'title',
+        };
+        if (!state.config.rules.some(r => r.pattern === rule.pattern && r.category === rule.category)) {
+          candidates.push(rule);
+        }
+      });
+      if (candidates.length === 0) { toast('所有移动记录已对应已有规则'); return; }
+      // 创建弹窗让用户选择要加入的规则
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:2147483647';
+      const panel = document.createElement('div');
+      panel.style.cssText = 'background:#fff;padding:20px;border-radius:8px;max-height:80vh;overflow:auto;min-width:300px';
+      panel.innerHTML = `
+        <div style="font-weight:bold;margin-bottom:8px;">选择要生成的规则（默认全部勾选）</div>
+        <form id="gen-rule-form">
+          ${candidates.map((r, i) => `<label style="display:block;margin:4px 0;"><input type="checkbox" name="r${i}" value="${i}" checked> ${esc(r.pattern)} → ${esc(r.category)}</label>`).join('')}
+          <div style="margin-top:12px;text-align:right;">
+            <button type="button" id="gen-cancel" class="wb-btn ghost">取消</button>
+            <button type="button" id="gen-confirm" class="wb-btn">确定</button>
+          </div>
+        </form>`;
+      modal.appendChild(panel);
+      document.body.appendChild(modal);
+
+      const closeModal = () => { document.body.removeChild(modal); };
+      document.getElementById('gen-cancel')!.addEventListener('click', closeModal);
+      document.getElementById('gen-confirm')!.addEventListener('click', () => {
+        const form = document.getElementById('gen-rule-form') as HTMLFormElement;
+        const selected: ClassifyRule[] = [];
+        candidates.forEach((r, i) => {
+          const cb = (form.elements.namedItem(`r${i}`) as HTMLInputElement);
+          if (cb && cb.checked) selected.push(r);
+        });
+        if (selected.length) {
+          state.config.rules = [...selected, ...state.config.rules];
+          persist();
+          renderRules();
+          toast(`已生成并加入 ${selected.length} 条规则`);
+        } else {
+          toast('未选择任何规则');
+        }
+        closeModal();
+      });
     });
-    if (newRules.length === 0) { toast('所有移动记录已对应已有规则'); return; }
-    state.config.rules = [...newRules, ...state.config.rules];
-    persist();
-    renderRules();
-    toast(`已生成 ${newRules.length} 条规则并加入规则列表`);
-  });
 
   // --- 规则测试面板 ---
   const testPanel = body.querySelector('#wb-rule-test-toggle');

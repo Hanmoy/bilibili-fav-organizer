@@ -464,12 +464,12 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
       sel.addEventListener('change', () => {
         const [cid, mi] = (sel as HTMLSelectElement).dataset.move!.split(':').map(Number);
         const target = (sel as HTMLSelectElement).value;
-        // 占位项「移动到…」为禁用态，理论不会到这里；防御处理
         if (!target) { (sel as HTMLSelectElement).value = ''; return; }
         const srcCat = catById(cid);
         if (!srcCat || mi < 0 || mi >= srcCat.items.length) { render(); return; }
         const [m] = srcCat.items.splice(mi, 1);
         if (!m) { render(); return; }
+        let finalTarget: string | null = null;
         if (target === '__new__') {
             const name = prompt('新分类名：', '');
             if (name && name.trim()) {
@@ -477,37 +477,32 @@ function renderSuggest(body: HTMLElement, result: CategoryMap): void {
               const existing = cats.find((c) => c.key === newName);
               if (existing) existing.items.push(m);
               else cats.push({ id: nextId++, key: newName, items: [m] });
-              // 记录手动移动
-              addMoveRecord({
-                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-                time: Date.now(),
-                srcCategory: srcCat.key,
-                srcMediaId: m.id,
-                srcTitle: m.title,
-                srcFolderName: m.srcFolderName,
-                targetCategory: newName,
-              });
+              finalTarget = newName;
             } else {
               // 取消，放回原位
               srcCat.items.splice(mi, 0, m);
-              render();
-              return;
             }
           } else {
             const targetCat = cats.find((c) => c.key === target);
-            if (targetCat) targetCat.items.push(m);
-            else srcCat.items.splice(mi, 0, m); // 目标不存在，放回
-            // 记录手动移动
-            addMoveRecord({
-              id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-              time: Date.now(),
-              srcCategory: srcCat.key,
-              srcMediaId: m.id,
-              srcTitle: m.title,
-              srcFolderName: m.srcFolderName,
-              targetCategory: target,
-            });
+            if (targetCat) {
+              targetCat.items.push(m);
+              finalTarget = target;
+            } else {
+              // 目标不存在，放回原位
+              srcCat.items.splice(mi, 0, m);
+            }
           }
+        if (finalTarget) {
+          addMoveRecord({
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+            time: Date.now(),
+            srcCategory: srcCat.key,
+            srcMediaId: m.id,
+            srcTitle: m.title,
+            srcFolderName: m.srcFolderName,
+            targetCategory: finalTarget,
+          });
+        }
         render();
       });
     });
