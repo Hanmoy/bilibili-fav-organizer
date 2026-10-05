@@ -11,6 +11,9 @@ import { renderHistory } from './views/history';
 import { getBiliAuth, getRiskStatus, isBlocked } from './service/bili';
 import { Icons, esc, fmtNum, fmtTime } from './utils/svg';
 
+// 构建时由 vite.config.ts 的 define 注入，与 userscript 版本号同源
+declare const __WB_VERSION__: string;
+
 let panelOpen = false;
 
 function ensureRoot(): { fab: HTMLElement; panel: HTMLElement } {
@@ -23,7 +26,7 @@ function ensureRoot(): { fab: HTMLElement; panel: HTMLElement } {
       <div id="wb-favorg-fab" title="B站收藏整理台">${Icons.spark}</div>
       <div id="wb-favorg-panel">
         <div class="wb-fh">
-          <div class="wb-fh-title">${Icons.star} B站收藏整理台</div>
+          <div class="wb-fh-title">${Icons.star} B站收藏整理台<span class="wb-fh-ver">v${__WB_VERSION__}</span></div>
           <button class="wb-fh-close" id="wb-close" title="收起">×</button>
         </div>
         <div class="wb-tabs">
@@ -59,12 +62,15 @@ function closePanel(): void {
   panelOpen = false;
   const panel = document.getElementById('wb-favorg-panel');
   if (panel) panel.classList.remove('open');
+  document.getElementById('wb-favorg-root')?.classList.remove('panel-open');
 }
 
 async function openPanel(): Promise<void> {
   panelOpen = true;
-  const { panel } = ensureRoot();
+  const { fab, panel } = ensureRoot();
   panel.classList.add('open');
+  // 面板展开时隐藏悬浮按钮，避免重叠抢点击；关闭后由 CSS 过渡恢复
+  fab.closest('#wb-favorg-root')?.classList.add('panel-open');
   updateFoot();
   switchTab('overview');
 }
