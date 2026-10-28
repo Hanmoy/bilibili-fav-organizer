@@ -2,6 +2,8 @@
   "name": "bilibili-fav-organizer",
   "version": "0.1.0",
   "description": "B站收藏整理台 —— B站收藏夹自动分类 + AI 辅助整理的工作台插件",
+  "author": "Hanmoy",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
